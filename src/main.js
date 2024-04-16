@@ -1,3 +1,75 @@
+// import iziToast from 'izitoast';
+// import 'izitoast/dist/css/iziToast.min.css';
+// import SimpleLightbox from 'simplelightbox';
+// import 'simplelightbox/dist/simple-lightbox.min.css';
+// import { getPhotos } from './js/pixabay-api.js';
+// import { createGallaryMarkup } from './js/render-functions.js';
+
+// const form = document.querySelector('.js-form');
+// const input = document.querySelector('.input');
+// const list = document.querySelector('.gallery');
+// const loader = document.querySelector('.loader');
+// const loadMore = document.querySelector('.load-more');
+// let page = 1;
+// const limit = 15;
+// form.addEventListener('submit', onClickBtn);
+
+
+// loadMore.classList.add('is-hidden');
+    
+// async function onClickBtn(event) {
+//   event.preventDefault();
+//   let search = input.value.trim();
+
+//   if (!search) {
+//     list.innerHTML = '';
+//     loader.classList.add('is-hidden');
+//     loadMore.classList.add('is-hidden');
+//     event.target.reset();
+
+//     return iziToast.error({
+//       message: 'Поле для введення не має бути порожнім!',
+//       position: 'topRight',
+//       timeout: 2000,
+//       color: 'yellow',
+//     });
+//   }
+  
+
+//   list.innerHTML = '';
+//    loader.classList.remove('is-hidden');
+//   try {
+//     const responce = await getPhotos(search, page, limit);
+ 
+//         if (responce.data.hits.length === 0) {
+//           list.innerHTML = '';
+//           form.reset();
+//           iziToast.error({
+//             message: 'За вашим пошуковим словом, зображень не знайдено!',
+//             position: 'topRight',
+//             timeout: 2000,
+//             color: 'red',
+//           });
+//           return;
+//         }
+
+//     list.innerHTML = createGallaryMarkup(responce.data.hits);
+//         const options = {
+//           captionsData: 'alt',
+//           captionDelay: 250,
+//         };
+//         const imageModal = new SimpleLightbox('.gallery a', options);
+//         imageModal.refresh();
+//         loader.classList.add('is-hidden');
+      
+
+    
+//   } catch (error) {
+//     error => console.log(error);
+//     loader.classList.add('is-hidden');
+//   }
+
+// }
 import iziToast from 'izitoast';
 import 'izitoast/dist/css/iziToast.min.css';
 import SimpleLightbox from 'simplelightbox';
@@ -9,54 +81,130 @@ const form = document.querySelector('.js-form');
 const input = document.querySelector('.input');
 const list = document.querySelector('.gallery');
 const loader = document.querySelector('.loader');
+const btn = document.querySelector('.load-more-btn');
+let page = 1;
 
+const limit = 15;
+let search = 0;
+
+const options = {
+  captionsData: 'alt',
+  captionDelay: 250,
+};
+const imageModal = new SimpleLightbox('.gallery a', options);
+
+btn.classList.add('is-hidden');
+
+btn.addEventListener('click', morePosts);
 form.addEventListener('submit', onClickBtn);
 
-function onClickBtn(event) {
+async function onClickBtn(event) {
   event.preventDefault();
-  const search = input.value.trim();
+  page = 1;
+  search = input.value.trim();
 
   if (!search) {
     list.innerHTML = '';
-
+    loader.classList.add('is-hidden');
+    btn.classList.add('is-hidden');
     event.target.reset();
 
     return iziToast.error({
-      message: 'Поле для введення не має бути порожнім!',
       position: 'topRight',
-      timeout: 2000,
-      color: 'yellow',
+      message:
+        'Sorry, there are no images matching your search query. Please try again!',
+      maxWidth: 300,
     });
   }
-  loader.classList.remove('is-hidden');
-
   list.innerHTML = '';
-  getPhotos(search)
-    .then(obj => {
-      if (obj.hits.length === 0) {
-        list.innerHTML = '';
+  try {
+    loader.classList.remove('is-hidden');
+    btn.classList.add('is-hidden');
+    const lists = await getPhotos(search, 1);
 
-        form.reset();
-
-        iziToast.error({
-          message: 'За вашим пошуковим словом, зображень не знайдено!',
-          position: 'topRight',
-          timeout: 2000,
-        });
-        return;
-      }
-
-      list.innerHTML = createGallaryMarkup(obj.hits);
-      const options = {
-        captionsData: 'alt',
-        captionDelay: 250,
-      };
-      const imageModal = new SimpleLightbox('.gallery a', options);
-      imageModal.refresh();
-    })
-
-    .catch(error => console.log(error))
-    .finally(() => {
+    if (lists.data.hits.length === 0) {
+      list.innerHTML = '';
       loader.classList.add('is-hidden');
+      btn.classList.add('is-hidden');
+      form.reset();
+
+      return iziToast.error({
+        position: 'topRight',
+        message:
+          'Sorry, there are no images matching your search query. Please try again!',
+        maxWidth: 300,
+      });
+    }
+    if (lists.data.total <= limit) {
+      list.insertAdjacentHTML(
+        'beforeend',
+        createGallaryMarkup(lists.data.hits)
+      );
+      btn.classList.add('is-hidden');
+      loader.classList.add('is-hidden');
+      btn.removeEventListener('click', onClickBtn);
+      iziToast.warning({
+        position: 'topRight',
+        message: "We're sorry, but you've reached the end of search results.",
+        color: 'yellow',
+      });
+      return;
+    }
+    list.insertAdjacentHTML('beforeend', createGallaryMarkup(lists.data.hits));
+    btn.classList.remove('is-hidden');
+    loader.classList.add('is-hidden');
+
+    imageModal.refresh();
+  } catch (error) {
+    console.log(error);
+    btn.classList.add('is-hidden');
+    loader.classList.add('is-hidden');
+  }
+}
+
+async function morePosts() {
+  page += 1;
+  btn.classList.add('is-hidden');
+  loader.classList.remove('is-hidden');
+  try {
+    const { data } = await getPhotos(search, page, limit);
+    const lastPage = Math.ceil(data.total / limit);
+    if (page === lastPage) {
+      btn.classList.add('is-hidden');
+      loader.classList.add('is-hidden');
+      list.insertAdjacentHTML('beforeend', createGallaryMarkup(data.hits));
+      iziToast.warning({
+        position: 'topRight',
+        message: "We're sorry, but you've reached the end of search results.",
+        color: 'yellow',
+      });
+      imageModal.refresh();
+      const { height: cardHeight } = document
+        .querySelector('.gallery')
+        .firstElementChild.getBoundingClientRect();
+
+      window.scrollBy({
+        top: cardHeight * 2,
+        behavior: 'smooth',
+      });
+      return;
+    }
+    list.insertAdjacentHTML('beforeend', createGallaryMarkup(data.hits));
+
+    const { height: cardHeight } = document
+      .querySelector('.gallery')
+      .firstElementChild.getBoundingClientRect();
+
+    window.scrollBy({
+      top: cardHeight * 2,
+      behavior: 'smooth',
     });
+    imageModal.refresh();
+    btn.classList.remove('is-hidden');
+    loader.classList.add('is-hidden');
+  } catch (error) {
+    console.log(error);
+    btn.classList.add('is-hidden');
+    loader.classList.add('is-hidden');
+  }
 }
