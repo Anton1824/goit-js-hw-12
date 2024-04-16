@@ -1,75 +1,3 @@
-// import iziToast from 'izitoast';
-// import 'izitoast/dist/css/iziToast.min.css';
-// import SimpleLightbox from 'simplelightbox';
-// import 'simplelightbox/dist/simple-lightbox.min.css';
-// import { getPhotos } from './js/pixabay-api.js';
-// import { createGallaryMarkup } from './js/render-functions.js';
-
-// const form = document.querySelector('.js-form');
-// const input = document.querySelector('.input');
-// const list = document.querySelector('.gallery');
-// const loader = document.querySelector('.loader');
-// const loadMore = document.querySelector('.load-more');
-// let page = 1;
-// const limit = 15;
-// form.addEventListener('submit', onClickBtn);
-
-
-// loadMore.classList.add('is-hidden');
-    
-// async function onClickBtn(event) {
-//   event.preventDefault();
-//   let search = input.value.trim();
-
-//   if (!search) {
-//     list.innerHTML = '';
-//     loader.classList.add('is-hidden');
-//     loadMore.classList.add('is-hidden');
-//     event.target.reset();
-
-//     return iziToast.error({
-//       message: 'Поле для введення не має бути порожнім!',
-//       position: 'topRight',
-//       timeout: 2000,
-//       color: 'yellow',
-//     });
-//   }
-  
-
-//   list.innerHTML = '';
-//    loader.classList.remove('is-hidden');
-//   try {
-//     const responce = await getPhotos(search, page, limit);
- 
-//         if (responce.data.hits.length === 0) {
-//           list.innerHTML = '';
-//           form.reset();
-//           iziToast.error({
-//             message: 'За вашим пошуковим словом, зображень не знайдено!',
-//             position: 'topRight',
-//             timeout: 2000,
-//             color: 'red',
-//           });
-//           return;
-//         }
-
-//     list.innerHTML = createGallaryMarkup(responce.data.hits);
-//         const options = {
-//           captionsData: 'alt',
-//           captionDelay: 250,
-//         };
-//         const imageModal = new SimpleLightbox('.gallery a', options);
-//         imageModal.refresh();
-//         loader.classList.add('is-hidden');
-      
-
-    
-//   } catch (error) {
-//     error => console.log(error);
-//     loader.classList.add('is-hidden');
-//   }
-
-// }
 import iziToast from 'izitoast';
 import 'izitoast/dist/css/iziToast.min.css';
 import SimpleLightbox from 'simplelightbox';
@@ -102,6 +30,7 @@ async function onClickBtn(event) {
   event.preventDefault();
   page = 1;
   search = input.value.trim();
+  form.reset();
 
   if (!search) {
     list.innerHTML = '';
@@ -140,6 +69,7 @@ async function onClickBtn(event) {
         'beforeend',
         createGallaryMarkup(lists.data.hits)
       );
+      imageModal.refresh();
       btn.classList.add('is-hidden');
       loader.classList.add('is-hidden');
       btn.removeEventListener('click', onClickBtn);
